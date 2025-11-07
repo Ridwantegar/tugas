@@ -1,7 +1,18 @@
 {
+  "name": "tiktok-live-overlay-server",
+  "version": "1.0.0",
+  "description": "WebSocket server untuk TikTok Live overlay (OBS)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
-    "express": "^5.1.0",
+    "express": "^4.18.2",
     "tiktok-live-connector": "^2.1.0",
     "ws": "^8.18.3"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
 }
