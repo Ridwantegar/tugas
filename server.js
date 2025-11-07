@@ -1,16 +1,29 @@
 const express = require('express');
 const WebSocket = require('ws');
 const { WebcastPushConnection } = require('tiktok-live-connector');
+const cors = require('cors');
+const http = require('http');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+const wsPort = process.env.WS_PORT || 8080;
+
+// ✅ Aktifkan CORS agar frontend dari Vercel/overlay bisa akses API
+app.use(cors({
+    origin: [
+        'https://livechat-production-95eb.up.railway.app', // domain overlay kamu
+        'https://tugas-production-66fb.up.railway.app'     // domain backend sendiri
+    ]
+}));
+
+// ✅ Gunakan HTTP server gabungan agar bisa support WSS di Railway
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
 let tiktokConnection = null;
 let allClients = new Set();
 let latestMessages = [];
 const MAX_STORED_MESSAGES = 50;
-
-const wss = new WebSocket.Server({ port: 8080 });
 
 wss.on('connection', (ws) => {
     console.log('Client connected to WebSocket');
@@ -18,9 +31,7 @@ wss.on('connection', (ws) => {
 
     ws.send(JSON.stringify({ type: 'info', message: 'Connected to server. Enter a TikTok username to start.' }));
 
-    latestMessages.forEach(msg => {
-        ws.send(JSON.stringify(msg));
-    });
+    latestMessages.forEach(msg => ws.send(JSON.stringify(msg)));
 
     ws.on('message', (message) => {
         const data = JSON.parse(message);
@@ -103,8 +114,9 @@ app.get('/api/messages', (req, res) => {
     res.json(latestMessages);
 });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-    console.log(`WebSocket server running at ws://localhost:8080`);
-    console.log(`API endpoint available at http://localhost:${port}/api/messages`);
+// ✅ Jalankan HTTP server gabungan (Express + WebSocket)
+server.listen(port, () => {
+    console.log(`Server running at https://tugas-production-66fb.up.railway.app:${port}`);
+    console.log(`WebSocket server running at wss://tugas-production-66fb.up.railway.app`);
+    console.log(`API endpoint available at https://tugas-production-66fb.up.railway.app/api/messages`);
 });
