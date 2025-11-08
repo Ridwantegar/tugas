@@ -23,6 +23,7 @@ const wss = new WebSocket.Server({ server });
 let tiktokConnection = null;
 let allClients = new Set();
 let latestMessages = [];
+let currentViewerCount = 0;
 const MAX_STORED_MESSAGES = 50;
 
 wss.on('connection', (ws) => {
@@ -61,15 +62,16 @@ wss.on('connection', (ws) => {
                     broadcastToAll(msg);
                 });
 
-                // ✅ Gabung event viewerCount dan roomUser biar gak duplikat
-                tiktokConnection.on('viewerCount', (count) => {
-                    const msg = { type: 'viewerCount', count };
+                tiktokConnection.on('member', (memberData) => {
+                    const msg = { type: 'member', data: memberData };
                     broadcastToAll(msg);
                 });
 
-                tiktokConnection.on('roomUser', (roomData) => {
-                    // Skip broadcast duplikat, karena viewerCount sudah handle
-                    console.log(`Room user update: ${roomData.viewerCount} viewers`);
+                tiktokConnection.on('roomUser', (data) => {
+                    currentViewerCount = data.viewerCount || 0;
+                    const msg = { type: 'viewerCount', count: currentViewerCount };
+                    broadcastToAll(msg);
+                    console.log(`Room user update: ${currentViewerCount} viewers`);
                 });
 
                 tiktokConnection.on('liveUrl', (url) => {
